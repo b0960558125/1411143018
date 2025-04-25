@@ -1,17 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Simple Web AR with Hiro</title>
+<title>Web AR - Hiro & Kanji Example</title>
+<!-- 引入 A-Frame 主程式 -->
 <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+<!-- 引入 AR.js for A-Frame 的擴充功能 -->
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 </head>
 <body>
+<!-- 建立 AR 場景 -->
+<!-- arjs="sourceType: webcam;" 表示使用攝影機作為輸入來源 -->
+<!-- debugUIEnabled: true 會在左下角顯示偵測資訊，有助於偵錯與學習觀察 -->
 <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: true;">
+<!-- 第一個標記：Hiro -->
+<!-- preset="hiro" 表示使用 AR.js 內建的 Hiro 標記，不需上傳 .patt 檔 -->
 <a-marker preset="hiro">
-<a-box position="0 0.6 0" rotation="0 45 0" color="rad"></a-box>
-<a-light type="ambient" intensity="0.8"></a-light>
+<!-- 在 Hiro 標記上放置一個立方體（a-box） -->
+<!-- position="-0.5 0.5 0" 表示物件相對於標記的位置（左邊偏一點、高度 0.5） -->
+<!-- color="teal" 表示顏色為藍綠色 -->
+<a-box position="-0.5 0.5 0" color="blue"></a-box>
 </a-marker>
+<!-- 第二個標記：Kanji -->
+<!-- preset="kanji" 同樣為 AR.js 內建標記，可直接使用 -->
+<a-marker preset="kanji">
+<!-- 在 Kanji 標記上放置一個球體（a-sphere） -->
+<!-- position="0.5 0.5 0" 表示物件相對於標記的位置（右邊偏一點、高度 0.5） -->
+<!-- radius="0.4" 設定球體半徑 -->
+<!-- color="orange" 設定球體顏色為橘色 -->
+<a-sphere position="0.5 0.5 0" radius="0.4" color="green"></a-sphere>
+</a-marker>
+<!-- AR.js 的攝影機元件 -->
+<!-- 這個 camera 是 AR 場景運作時必要的，會自動追蹤標記與使用者相機畫面 -->
 <a-entity camera></a-entity>
 </a-scene>
 </body>
-</html>
+</html
