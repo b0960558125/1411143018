@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>MindAR Example</title>
+<script src="https://cdn.jsdelivr.net/npm/aframe@1.4.2/dist/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+<style>
+html, body {
+margin: 0; padding: 0;
+width: 100%; height: 100%;
+overflow: hidden;
+}
+a-scene {
+width: 100%; height: 100%;
+position: fixed; top: 0; left: 0;
+}
+/* 隱藏所有 MindAR 預設 UI */
+.mindar-ui-loading,
+.mindar-ui-error,
+.mindar-ui-scanning {
+display: none;
+}
+/* 自訂文字的外層 DIV */
+#custom-text {
+display: none; /* 預設隱藏 */
+position: fixed;
+top: 20px; /* 距離頂部 20px */
+left: 50%;
+transform: translateX(-50%);
+background: rgba(0, 0, 0, 0.6);
+color: white;
+padding: 0.5em 1em;
+font-size: 1.5em;
+border-radius: 0.3em;
+z-index: 9999;
+pointer-events: none;
+}
+</style>
+</head>
+5
+範例程式碼(接續)
+<body>
+<!-- 1. HTML 裡先放一個自訂的 DIV -->
+<div id="p1.jpg">他是個很帥氣的男人喔!</div>
+<!-- 2. 你的 AR 場景 -->
+<!-- 標記副檔名須為.mind -->
+<a-scene
+mindar-image="
+imageTargetSrc: targets.mind;
+autoStart: true;
+showStats: false;
+uiLoading: no;
+uiScanning: no;
+uiError: no;
+"
+color-space="sRGB"
+renderer="colorManagement: true, physicallyCorrectLights"
+vr-mode-ui="enabled: false"
+device-orientation-permission-ui="enabled: false"
+> <!-- 設定 AR 相機位於原點，並關閉滑鼠/手勢控制（僅使用裝置鏡頭） -->
+<a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+<!-- 定義第 0 號圖像目標，綁定 ID 供 JavaScript 監聽掃描事件使用 -->
+<a-entity mindar-image-target="targetIndex: 0" id="target"></a-entity>
+</a-scene>
+<!-- 3. 用 JS 綁事件：掃到 target 時顯示 DIV，掉失時隱藏 -->
+<script>
+// 1. 等整個頁面（DOM、資源）載入完成後，再執行內部程式
+window.addEventListener("load", () => {
+// 2. 取得 AR 目標元素（<a-entity id="target">）
+const targetEl = document.querySelector("#target");
+// 3. 取得自訂文字容器（<div id="custom-text">）
+const customDiv = document.querySelector("#custom-text");
+// 4. 綁定「掃描到目標」事件
+targetEl.addEventListener("targetFound", () => {
+// 4.1 掃描後，將自訂文字顯示出來
+customDiv.style.display = "block";
+});
+// 5. 綁定「目標遺失」事件
+targetEl.addEventListener("targetLost", () => {
+// 5.1 目標消失後，隱藏自訂文字
+customDiv.style.display = "none";
+});
+});
+</script>
+</body>
+</html>
+
