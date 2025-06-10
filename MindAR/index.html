@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8" />
+  <title>MindAR 圖片辨識測試</title>
+  <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.2/dist/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <style>
+    body { margin: 0; padding: 0; overflow: hidden; font-family: Arial, sans-serif; }
+    a-scene { width: 100%; height: 100%; position: fixed; top: 0; left: 0; }
+    
+    /* 隱藏 MindAR 預設的掃描提示，只顯示我們的訊息 */
+    .mindar-ui-loading,
+    .mindar-ui-error,
+    .mindar-ui-scanning {
+      display: none;
+    }
+
+    /* 顯示訊息的盒子 */
+    #message-box {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      font-size: 1.5em;
+      text-align: center;
+      z-index: 100; /* 確保在最上層 */
+    }
+
+    /* 題目盒子 (與舊版相同，但確保一開始隱藏) */
+    #question-box {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      width: 90%;
+      max-width: 600px;
+      font-size: 1.2em;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      display: none; /* 預設隱藏 */
+      z-index: 10;
+      text-align: center;
+    }
+    #question-text {
+      margin-bottom: 15px;
+      font-weight: bold;
+      color: #333;
+    }
+    #buttons {
+      margin-top: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      gap: 10px;
+    }
+    button {
+      font-size: 1em;
+      padding: 12px 25px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+      flex: 1;
+      min-width: 120px;
+    }
+    button:hover { transform: translateY(-2px); }
+    button:active { transform: translateY(0); }
+    button.correct { background-color: #4CAF50; color: white; }
+    button.correct:hover { background-color: #45a049; }
+    button.wrong { background-color: #F44336; color: white; }
+    button.wrong:hover { background-color: #d32f2f; }
+    #result {
+      margin-top: 15px;
+      font-weight: bold;
+      text-align: center;
+      color: #2196F3;
+    }
+  </style>
+</head>
+<body>
+  <a-scene mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1;" 
+           color-space="sRGB" 
+           embedded 
+           renderer="colorManagement: true, physicallyCorrectLights" 
+           vr-mode-ui="enabled: false" 
+           device-orientation-permission-ui="enabled: false">
+    
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity mindar-image-target="targetIndex: 0"></a-entity>
+
+  </a-scene>
+
+  <div id="message-box">請允許攝影機權限，然後掃描目標圖片...</div>
+
+  <div id="question-box">
+    <div id="question-text"></div>
+    <div id="buttons">
+      <button id="btn-option-A"></button>
+      <button id="btn-option-B"></button>
+    </div>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        question: "1. What is the purpose of your visit? （你的造訪目的）",
+        options: [
+            { text: "It’s a vacation.", isCorrect: true },
+            { text: "I’m by myself.", isCorrect: false }
+        ]
+      },
+      {
+        question: "2. Where will you be staying? （你預計會短住在哪裡？）",
+        options: [
+            { text: "A friend’s place", isCorrect: true },
+            { text: "Two weeks", isCorrect: false }
+        ]
+      },
+      {
+        question: "3. How long will you be staying?（你預計會停留多久？）",
+        options: [
+            { text: "Two weeks", isCorrect: true },
+            { text: "My cousin’s place.", isCorrect: false }
+        ]
+      },
+      {
+        question: "4. What are you planning to do during your visit? （你預計這段期間會做些什麼）",
+        options: [
+            { text: "Shopping", isCorrect: true },
+            { text: "I’m by myself.", isCorrect: false }
+        ]
+      },
+      {
+        question: "5. Will you be visiting other cities? （你會去其他城市嗎？）",
+        options: [
+            { text: "Yes, I’ll also go to LA.", isCorrect: true },
+            { text: "I come from Taiwan", isCorrect: false }
+        ]
+      },
+      {
+        question: "6. Who are you traveling with? （你和誰一起來呢？）",
+        options: [
+            { text: "My friends", isCorrect: true },
+            { text: "A friend’s place", isCorrect: false }
+        ]
+      },
+      {
+        question: "7. Do you have a return ticket? （你有回程機票嗎？）",
+        options: [
+            { text: "My return flight is on July 4th.", isCorrect: true },
+            { text: "I'm visiting my friend.", isCorrect: false }
+        ]
+      },
+      {
+        question: "8. Good afternoon. May I see your passport, please?（下午好，我可以看你的護照嗎？）",
+        options: [
+            { text: "Sure, here you go.", isCorrect: true },
+            { text: "NO!", isCorrect: false }
+        ]
+      },
+      {
+        question: "9. How much money are you carrying?（你帶了多少現金？）",
+        options: [
+            { text: "I have about 500 US dollars and a credit card.", isCorrect: true },
+            { text: "I have about 5 US dollars.", isCorrect: false }
+        ]
+      },
+      {
+        question: "10. What’s your occupation? (你的職業什麼？）",
+        options: [
+            { text: "I am a teacher.", isCorrect: true },
+            { text: "Sure, here you go.", isCorrect: false }
+        ]
+      },
+    ];
+
+    let currentIndex = 0;
+    const questionBox = document.getElementById("question-box");
+    const questionText = document.getElementById("question-text");
+    const btnOptionA = document.getElementById("btn-option-A");
+    const btnOptionB = document.getElementById("btn-option-B");
+    const resultDiv = document.getElementById("result");
+    const messageBox = document.getElementById("message-box"); // 新增的訊息盒子
+
+    function showQuestion() {
+      const q = questions[currentIndex];
+      questionText.textContent = q.question;
+      
+      const shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
+      
+      btnOptionA.textContent = shuffledOptions[0].text;
+      btnOptionA.dataset.isCorrect = shuffledOptions[0].isCorrect;
+      btnOptionA.className = shuffledOptions[0].isCorrect ? 'correct' : 'wrong';
+
+      btnOptionB.textContent = shuffledOptions[1].text;
+      btnOptionB.dataset.isCorrect = shuffledOptions[1].isCorrect;
+      btnOptionB.className = shuffledOptions[1].isCorrect ? 'correct' : 'wrong';
+      
+      resultDiv.textContent = "";
+      btnOptionA.disabled = false;
+      btnOptionB.disabled = false;
+    }
+
+    function endGame(msg) {
+      resultDiv.textContent = msg + " 遊戲結束！請重新整理頁面再玩一次。";
+      btnOptionA.disabled = true;
+      btnOptionB.disabled = true;
+    }
+
+    function checkAnswer(isClickedCorrect) {
+      const currentQuestion = questions[currentIndex];
+      const clickedOptionIsCorrect = (isClickedCorrect === "true");
+
+      if (clickedOptionIsCorrect) {
+        currentIndex++;
+        if (currentIndex >= questions.length) {
+          resultDiv.textContent = "恭喜你全部答對！遊戲完成！🎉";
+          btnOptionA.disabled = true;
+          btnOptionB.disabled = true;
+        } else {
+          showQuestion();
+        }
+      } else {
+        const correctAnswerText = currentQuestion.options.find(opt => opt.isCorrect).text;
+        endGame(`很可惜，這題答錯了！正確答案是：「${correctAnswerText}」`);
+      }
+    }
+
+    btnOptionA.addEventListener("click", () => checkAnswer(btnOptionA.dataset.isCorrect));
+    btnOptionB.addEventListener("click", () => checkAnswer(btnOptionB.dataset.isCorrect));
+
+    questionBox.style.display = "none"; // 題目框一開始隱藏
+
+    const sceneEl = document.querySelector("a-scene");
+
+    // 監聽 MindAR 場景初始化成功 (攝影機畫面應該會出現)
+    sceneEl.addEventListener("loaded", () => {
+        console.log("A-Frame 場景已載入完成，MindAR 應該會開始啟動。");
+        messageBox.textContent = "攝影機已開啟，請對準您的目標圖片。";
+    });
+
+    // 監聽攝影機權限錯誤
+    sceneEl.addEventListener("camera-error", (event) => {
+        messageBox.textContent = "攝影機權限錯誤或無法啟動攝影機。請檢查瀏覽器設定。";
+        console.error("Camera Error:", event.detail);
+    });
+
+    // 監聽目標被找到
+    sceneEl.addEventListener("targetFound", (event) => {
+      if (event.detail && event.detail.targetIndex === 0) {
+        console.log("MindAR: 目標圖片已找到！顯示題目框。");
+        messageBox.style.display = "none"; // 找到目標後隱藏提示訊息
+        questionBox.style.display = "block"; // 顯示題目框
+        currentIndex = 0; // 重置題目索引，從第一道題開始
+        showQuestion(); // 顯示當前題目
+        resultDiv.textContent = ""; // 清空結果訊息
+      }
+    });
+
+    // 監聽目標消失
+    sceneEl.addEventListener("targetLost", (event) => {
+      if (event.detail && event.detail.targetIndex === 0) {
+        console.log("MindAR: 目標圖片已消失！隱藏題目框。");
+        messageBox.style.display = "block"; // 目標消失後重新顯示提示訊息
+        messageBox.textContent = "目標圖片已消失，請重新對準。";
+        questionBox.style.display = "none"; // 隱藏題目框
+        // 可以在這裡重置遊戲狀態或暫停
+      }
+    });
+  </script>
+</body>
+</html>
